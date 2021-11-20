@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -15,10 +16,16 @@ import (
 func main() {
 
 	token := os.Getenv("TELEGRAM_TOKEN")
+	chatId := os.Getenv("TELEGRAM_CHAT_ID")
 
 	// Check if token is set else throw error with message
 	if token == "" {
 		log.Fatal("TELEGRAM_TOKEN is not set")
+	}
+
+	// Check if chatId is set else throw error with message
+	if chatId == "" {
+		log.Fatal("TELEGRAM_CHAT_ID is not set")
 	}
 
 	bot, err := tgbotapi.NewBotAPI(token)
@@ -81,7 +88,9 @@ func main() {
 
 		upload_bytes := tgbotapi.FileBytes{Name: fileHeader.Filename, Bytes: bytes}
 
-		msg := tgbotapi.NewDocument(-761029330, upload_bytes)
+		chatId, _ := strconv.ParseInt(chatId, 10, 64)
+
+		msg := tgbotapi.NewDocument(chatId, upload_bytes)
 		ret, err := bot.Send(msg)
 
 		if err != nil {
