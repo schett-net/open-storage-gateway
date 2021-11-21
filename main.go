@@ -88,7 +88,14 @@ func main() {
 
 	// Upload file to storage
 	r.POST("/storage", func(c *gin.Context) {
-		fileHeader, _ := c.FormFile("file")
+
+		fileHeader, err := c.FormFile("file")
+
+		if err != nil {
+			c.AbortWithStatus(http.StatusBadRequest)
+			return
+		}
+
 		file, _ := fileHeader.Open()
 		bytes, _ := ioutil.ReadAll(file)
 
