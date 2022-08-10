@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -56,8 +57,6 @@ func main() {
 
 		directUrl, err := bot.GetFileDirectURL(id)
 
-		fmt.Print(directUrl)
-
 		if err != nil {
 			c.AbortWithStatus(http.StatusNotFound)
 			return
@@ -72,7 +71,6 @@ func main() {
 		}
 
 		contentLength := resp.ContentLength
-		contentType := resp.Header.Get("Content-Type")
 
 		// get filename from directUrl
 		fileName := directUrl[strings.LastIndex(directUrl, "/")+1:]
@@ -83,12 +81,22 @@ func main() {
 
 		defer resp.Body.Close()
 
+		// Read the content
+		var bodyBytes []byte
+		if c.Request.Body != nil {
+			bodyBytes, _ = ioutil.ReadAll(resp.Body)
+		}
+		// Restore the io.ReadCloser to its original state
+		resp.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		// Use the content to specify the mimeType
+		contentType := http.DetectContentType(bodyBytes)
+
 		c.DataFromReader(http.StatusOK, contentLength, contentType, resp.Body, extraHeaders)
 	})
 
 	// Upload file to storage
 	r.POST("/storage", func(c *gin.Context) {
-
 		fileHeader, err := c.FormFile("file")
 
 		if err != nil {
